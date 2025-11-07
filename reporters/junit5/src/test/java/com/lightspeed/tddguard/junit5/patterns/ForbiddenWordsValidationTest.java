@@ -120,6 +120,35 @@ class ForbiddenWordsValidationTest {
     }
 
     @Test
+    void gradleBuildOptimizationDetectorMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
+        // Given: Create scenario that triggers Gradle build optimization detection
+        GradleBuildOptimizationDetector detector = new GradleBuildOptimizationDetector();
+
+        // Create build.gradle with annotation processors
+        String buildGradle = "dependencies {\n" +
+            "    annotationProcessor 'org.projectlombok:lombok:1.18.30'\n" +
+            "}\n";
+
+        Path buildFile = projectRoot.resolve("build.gradle");
+        Files.writeString(buildFile, buildGradle);
+
+        TestJson testResults = createTestResults(1, 1, 0, 0);
+
+        // Create build metrics with high variance (3 builds with significant variance)
+        List<Long> buildTimes = Arrays.asList(1000L, 3000L, 2000L);
+        BuildMetrics buildMetrics = BuildMetrics.withHistory(buildTimes);
+
+        // When
+        Optional<EducationalFeedback> feedback = detector.detect(testResults, projectRoot, buildMetrics);
+
+        // Then
+        assertTrue(feedback.isPresent(), "Detector should trigger with high variance");
+        assertNoForbiddenWords(feedback.get().message, "GradleBuildOptimizationDetector message");
+        assertNoForbiddenWords(feedback.get().recommendation, "GradleBuildOptimizationDetector recommendation");
+        assertNoForbiddenWords(feedback.get().title, "GradleBuildOptimizationDetector title");
+    }
+
+    @Test
     void allDetectorsShouldProvideForbiddenWordFreeMessages(@TempDir Path projectRoot) throws IOException {
         // Given: Create test scenario that might trigger multiple detectors
         String testCode = "import org.mockito.Mock;\n\n" +
@@ -139,12 +168,13 @@ class ForbiddenWordsValidationTest {
         Files.writeString(testFile, testCode);
 
         TestJson testResults = createTestResults(1, 1, 0, 0);
-        BuildMetrics buildMetrics = new BuildMetrics(3000L, false);
+        BuildMetrics buildMetrics = BuildMetrics.withHistory(Arrays.asList(1000L, 3000L, 2000L));
 
         List<PatternDetector> detectors = Arrays.asList(
             new MockOveruseDetector(),
             new TestFixturesOpportunityDetector(),
-            new MissingIsolationDetector()
+            new MissingIsolationDetector(),
+            new GradleBuildOptimizationDetector()
         );
 
         // When/Then: Check all detectors
