@@ -133,6 +133,43 @@ class PatternDetectionIntegrationTest {
     }
 
     @Test
+    void shouldDetectFileStructureIssuesEndToEnd(@TempDir Path tempDir) throws IOException {
+        // Given: Project with file structure issues
+        setupProjectWithFileStructureIssues(tempDir);
+
+        // When: Running tests
+        runTestsAndWait(tempDir, TestsWithFileStructureIssues.class);
+
+        // Then: test.json should contain educational feedback for file-structure
+        JsonObject testJson = readTestJson(tempDir);
+        JsonArray educational = testJson.getAsJsonArray("educational");
+
+        assertTrue(educational.size() > 0, "Educational feedback should be present");
+
+        boolean foundFileStructure = false;
+        for (int i = 0; i < educational.size(); i++) {
+            JsonObject feedback = educational.get(i).getAsJsonObject();
+            if ("file-structure".equals(feedback.get("category").getAsString())) {
+                foundFileStructure = true;
+
+                // Verify evidence
+                JsonObject evidence = feedback.getAsJsonObject("evidence");
+                assertNotNull(evidence.get("testsInMain"), "testsInMain should be present");
+                assertNotNull(evidence.get("namingViolations"), "namingViolations should be present");
+
+                // Verify message and recommendation are present
+                assertNotNull(feedback.get("message"));
+                assertNotNull(feedback.get("recommendation"));
+            }
+        }
+
+        assertTrue(foundFileStructure, "File structure pattern should be detected");
+
+        // Cleanup
+        System.clearProperty("tddguard.projectRoot");
+    }
+
+    @Test
     void shouldDetectMultiplePatternsSimultaneously(@TempDir Path tempDir) throws IOException {
         // Given: Project with multiple anti-patterns
         setupProjectWithMultiplePatterns(tempDir);
@@ -231,6 +268,35 @@ class PatternDetectionIntegrationTest {
             "}\n";
 
         Files.writeString(testFile, testCode);
+    }
+
+    private void setupProjectWithFileStructureIssues(Path projectRoot) throws IOException {
+        Path tddGuardDir = projectRoot.resolve(".claude/tdd-guard");
+        Files.createDirectories(tddGuardDir);
+
+        // Create test file in production directory (CRITICAL ERROR)
+        Path testInMain = projectRoot.resolve("src/main/java/BadTest.java");
+        Files.createDirectories(testInMain.getParent());
+
+        String badTestCode = "import org.junit.jupiter.api.Test;\n" +
+            "import static org.junit.jupiter.api.Assertions.*;\n\n" +
+            "public class BadTest {\n" +
+            "    @Test void test() { assertTrue(true); }\n" +
+            "}\n";
+
+        Files.writeString(testInMain, badTestCode);
+
+        // Create test file with naming violation
+        Path testWithBadName = projectRoot.resolve("src/test/java/UserValidator.java");
+        Files.createDirectories(testWithBadName.getParent());
+
+        String namingViolationCode = "import org.junit.jupiter.api.Test;\n" +
+            "import static org.junit.jupiter.api.Assertions.*;\n\n" +
+            "public class UserValidator {\n" +
+            "    @Test void shouldValidate() { assertTrue(true); }\n" +
+            "}\n";
+
+        Files.writeString(testWithBadName, namingViolationCode);
     }
 
     private void setupProjectWithMultiplePatterns(Path projectRoot) throws IOException {
@@ -354,6 +420,16 @@ class PatternDetectionIntegrationTest {
 
         @Test
         void test2() {
+            assertTrue(true);
+        }
+    }
+
+    /**
+     * Test class with file structure issues.
+     */
+    public static class TestsWithFileStructureIssues {
+        @Test
+        void testStructure() {
             assertTrue(true);
         }
     }

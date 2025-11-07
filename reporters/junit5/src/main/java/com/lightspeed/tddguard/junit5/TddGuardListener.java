@@ -56,7 +56,9 @@ public class TddGuardListener implements TestExecutionListener {
         this.patternDetectors = List.of(
             new MockOveruseDetector(),
             new TestFixturesOpportunityDetector(),
-            new MissingIsolationDetector()
+            new MissingIsolationDetector(),
+            new GradleBuildOptimizationDetector(),
+            new FileStructureAnalyzer()
         );
     }
 

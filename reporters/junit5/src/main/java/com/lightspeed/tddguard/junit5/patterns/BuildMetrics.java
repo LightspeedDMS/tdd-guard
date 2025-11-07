@@ -1,6 +1,9 @@
 package com.lightspeed.tddguard.junit5.patterns;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Build and compilation metrics for pattern detection.
@@ -10,6 +13,7 @@ public class BuildMetrics {
 
     private final long testCompilationTime;
     private final boolean incrementalCompilationEnabled;
+    private final List<Long> buildTimeHistory;
 
     /**
      * Creates build metrics with explicit values.
@@ -19,11 +23,27 @@ public class BuildMetrics {
      * @throws IllegalArgumentException if compilationTime is negative
      */
     public BuildMetrics(long testCompilationTime, boolean incrementalCompilationEnabled) {
+        this(testCompilationTime, incrementalCompilationEnabled, Collections.emptyList());
+    }
+
+    /**
+     * Creates build metrics with explicit values including build time history.
+     *
+     * @param testCompilationTime           Test compilation time in milliseconds
+     * @param incrementalCompilationEnabled Whether incremental compilation is enabled
+     * @param buildTimeHistory              List of recent build times in milliseconds
+     * @throws IllegalArgumentException if compilationTime is negative or history is null
+     */
+    public BuildMetrics(long testCompilationTime, boolean incrementalCompilationEnabled, List<Long> buildTimeHistory) {
         if (testCompilationTime < 0) {
             throw new IllegalArgumentException("Compilation time cannot be negative");
         }
+        if (buildTimeHistory == null) {
+            throw new IllegalArgumentException("Build time history cannot be null");
+        }
         this.testCompilationTime = testCompilationTime;
         this.incrementalCompilationEnabled = incrementalCompilationEnabled;
+        this.buildTimeHistory = new ArrayList<>(buildTimeHistory);
     }
 
     /**
@@ -64,5 +84,28 @@ public class BuildMetrics {
      */
     public boolean isIncrementalCompilationEnabled() {
         return incrementalCompilationEnabled;
+    }
+
+    /**
+     * Returns the build time history.
+     *
+     * @return Unmodifiable list of build times in milliseconds
+     */
+    public List<Long> getBuildTimeHistory() {
+        return Collections.unmodifiableList(buildTimeHistory);
+    }
+
+    /**
+     * Creates build metrics with only build time history.
+     *
+     * @param buildTimeHistory List of recent build times in milliseconds
+     * @return BuildMetrics with history
+     * @throws IllegalArgumentException if history is null
+     */
+    public static BuildMetrics withHistory(List<Long> buildTimeHistory) {
+        if (buildTimeHistory == null) {
+            throw new IllegalArgumentException("Build time history cannot be null");
+        }
+        return new BuildMetrics(0L, false, buildTimeHistory);
     }
 }

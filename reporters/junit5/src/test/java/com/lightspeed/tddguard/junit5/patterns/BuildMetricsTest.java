@@ -70,4 +70,35 @@ class BuildMetricsTest {
             new BuildMetrics(-1L, false)
         );
     }
+
+    @Test
+    void shouldCreateWithBuildTimeHistory() {
+        // Given
+        java.util.List<Long> history = java.util.List.of(1000L, 1200L, 1100L);
+
+        // When
+        BuildMetrics metrics = BuildMetrics.withHistory(history);
+
+        // Then
+        assertEquals(history, metrics.getBuildTimeHistory());
+        assertEquals(3, metrics.getBuildTimeHistory().size());
+    }
+
+    @Test
+    void shouldReturnEmptyHistoryForDefaultMetrics() {
+        // When
+        BuildMetrics metrics = BuildMetrics.empty();
+
+        // Then
+        assertNotNull(metrics.getBuildTimeHistory());
+        assertTrue(metrics.getBuildTimeHistory().isEmpty());
+    }
+
+    @Test
+    void shouldRejectNullHistory() {
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () ->
+            BuildMetrics.withHistory(null)
+        );
+    }
 }

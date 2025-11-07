@@ -149,6 +149,75 @@ class ForbiddenWordsValidationTest {
     }
 
     @Test
+    void fileStructureAnalyzerMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
+        // Given: Create scenario that triggers file structure detection
+        FileStructureAnalyzer detector = new FileStructureAnalyzer();
+
+        // Create test file in production directory
+        String testCode = "import org.junit.jupiter.api.Test;\n\n" +
+            "public class BadTest {\n" +
+            "    @Test\n" +
+            "    void test() {}\n" +
+            "}\n";
+
+        Path testFile = projectRoot.resolve("src/main/java/BadTest.java");
+        Files.createDirectories(testFile.getParent());
+        Files.writeString(testFile, testCode);
+
+        TestJson testResults = createTestResults(1, 1, 0, 0);
+        BuildMetrics buildMetrics = BuildMetrics.empty();
+
+        // When
+        Optional<EducationalFeedback> feedback = detector.detect(testResults, projectRoot, buildMetrics);
+
+        // Then
+        assertTrue(feedback.isPresent(), "Detector should trigger");
+        assertNoForbiddenWords(feedback.get().message, "FileStructureAnalyzer message");
+        assertNoForbiddenWords(feedback.get().recommendation, "FileStructureAnalyzer recommendation");
+        assertNoForbiddenWords(feedback.get().title, "FileStructureAnalyzer title");
+    }
+
+    @Test
+    void fileStructureAnalyzerPackageMismatchMessagesMustNotContainForbiddenWords(@TempDir Path projectRoot) throws IOException {
+        // Given: Create scenario that triggers package mismatch detection
+        FileStructureAnalyzer detector = new FileStructureAnalyzer();
+
+        // Create production class in com.example.services package
+        String productionCode = "package com.example.services;\n\n" +
+            "public class User {\n" +
+            "    private String name;\n" +
+            "}\n";
+
+        Path productionFile = projectRoot.resolve("src/main/java/com/example/services/User.java");
+        Files.createDirectories(productionFile.getParent());
+        Files.writeString(productionFile, productionCode);
+
+        // Create test class in different package (com.example instead of com.example.services)
+        String testCode = "package com.example;\n\n" +
+            "import org.junit.jupiter.api.Test;\n\n" +
+            "public class UserTest {\n" +
+            "    @Test\n" +
+            "    void test() {}\n" +
+            "}\n";
+
+        Path testFile = projectRoot.resolve("src/test/java/com/example/UserTest.java");
+        Files.createDirectories(testFile.getParent());
+        Files.writeString(testFile, testCode);
+
+        TestJson testResults = createTestResults(1, 1, 0, 0);
+        BuildMetrics buildMetrics = BuildMetrics.empty();
+
+        // When
+        Optional<EducationalFeedback> feedback = detector.detect(testResults, projectRoot, buildMetrics);
+
+        // Then
+        assertTrue(feedback.isPresent(), "Detector should trigger on package mismatch");
+        assertNoForbiddenWords(feedback.get().message, "FileStructureAnalyzer package mismatch message");
+        assertNoForbiddenWords(feedback.get().recommendation, "FileStructureAnalyzer package mismatch recommendation");
+        assertNoForbiddenWords(feedback.get().title, "FileStructureAnalyzer package mismatch title");
+    }
+
+    @Test
     void allDetectorsShouldProvideForbiddenWordFreeMessages(@TempDir Path projectRoot) throws IOException {
         // Given: Create test scenario that might trigger multiple detectors
         String testCode = "import org.mockito.Mock;\n\n" +
@@ -174,7 +243,8 @@ class ForbiddenWordsValidationTest {
             new MockOveruseDetector(),
             new TestFixturesOpportunityDetector(),
             new MissingIsolationDetector(),
-            new GradleBuildOptimizationDetector()
+            new GradleBuildOptimizationDetector(),
+            new FileStructureAnalyzer()
         );
 
         // When/Then: Check all detectors
