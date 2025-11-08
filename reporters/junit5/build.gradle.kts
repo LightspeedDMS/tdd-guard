@@ -50,3 +50,12 @@ tasks.withType<JavaCompile> {
     options.compilerArgs.add("-Xlint:unchecked")
     options.compilerArgs.add("-Xlint:deprecation")
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            artifactId = "junit5"
+        }
+    }
+}
