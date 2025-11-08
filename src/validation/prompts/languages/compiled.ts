@@ -57,11 +57,13 @@ When evaluating an Edit/Write operation:
 - This applies to Java POJOs AND Kotlin data classes
 - EVEN when adding multiple properties/fields at once
 
-### Compilation Phase Stubs (When Test File Exists but No Test Output)
+### Compilation Phase Stubs
 
-When a corresponding test file EXISTS but there's no test output (indicating compilation failure), ALLOW these minimal stubs:
+When a corresponding test file EXISTS, ALLOW these minimal stubs to fix compilation:
 
-#### Always Allowed:
+**CRITICAL**: Empty stubs are ALWAYS allowed when test file exists, EVEN if test output exists from other tests. The compilation phase requires structural stubs before tests can run.
+
+#### Always Allowed (Compilation Stubs):
 1. **Empty class/struct/interface**
    - \`public class Customer {}\`
    - \`struct User {}\`
