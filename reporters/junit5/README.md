@@ -22,6 +22,8 @@ dependencies {
 
 ### Maven
 
+**Add dependency**:
+
 ```xml
 <dependency>
     <groupId>com.lightspeed.tddguard</groupId>
@@ -29,6 +31,51 @@ dependencies {
     <version>0.1.0</version>
     <scope>test</scope>
 </dependency>
+```
+
+**Configure Surefire plugin** (required for system properties):
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0</version>
+            <configuration>
+                <systemPropertyVariables>
+                    <tddguard.projectRoot>${project.basedir}</tddguard.projectRoot>
+                </systemPropertyVariables>
+                <environmentVariables>
+                    <TDDGUARD_ENABLED>true</TDDGUARD_ENABLED>
+                </environmentVariables>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+**For GitHub Packages** (if not using mavenLocal):
+
+```xml
+<repositories>
+    <repository>
+        <id>github-tdd-guard</id>
+        <url>https://maven.pkg.github.com/OWNER/tdd-guard</url>
+    </repository>
+</repositories>
+```
+
+And configure authentication in `~/.m2/settings.xml`:
+
+```xml
+<servers>
+    <server>
+        <id>github-tdd-guard</id>
+        <username>YOUR_GITHUB_USERNAME</username>
+        <password>YOUR_GITHUB_TOKEN</password>
+    </server>
+</servers>
 ```
 
 ## Activation
