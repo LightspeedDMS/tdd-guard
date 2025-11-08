@@ -35,7 +35,17 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // Exclude test fixtures that are run programmatically by integration tests
+        excludeEngines("junit-vintage") // Exclude to avoid running JUnit4VintageFixture directly
+    }
+
+    // Exclude fixture classes from test execution (they're run programmatically)
+    exclude("**/SampleTests.class")
+    exclude("**/JUnit4VintageFixture.class")
+    exclude("**/NestedTestExample.class")
+    exclude("**/AdvancedTestTypes.class")
+    exclude("**/TestDescriptorStub.class")
 
     // Configure test execution
     testLogging {
