@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.lightspeed.tddguard"
-version = "0.1.0"
+version = project.findProperty("version") as String? ?: "0.1.0-SNAPSHOT"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -56,6 +56,35 @@ publishing {
         create<MavenPublication>("maven") {
             from(components["java"])
             artifactId = "junit5"
+
+            pom {
+                name.set("TDD Guard JUnit5 Reporter")
+                description.set("JUnit 5 reporter for TDD Guard with educational feedback")
+                url.set("https://github.com/${System.getenv("GITHUB_REPOSITORY") ?: "lightspeed/tdd-guard"}")
+
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/${System.getenv("GITHUB_REPOSITORY") ?: "lightspeed/tdd-guard"}.git")
+                    url.set("https://github.com/${System.getenv("GITHUB_REPOSITORY") ?: "lightspeed/tdd-guard"}")
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/${System.getenv("GITHUB_REPOSITORY") ?: "lightspeed/tdd-guard"}")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("githubToken") as String? ?: System.getenv("GITHUB_TOKEN")
+            }
         }
     }
 }
